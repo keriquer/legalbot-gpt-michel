@@ -1,74 +1,59 @@
 import streamlit as st
 import json
-import os
-
 from transformers import pipeline
-from langchain_community.llms import HuggingFacePipeline
-
-pipe = pipeline(
-    "text2text-generation",
-    model="declare-lab/flan-alpaca-base",
-    max_length=512,
-    temperature=0.0
-)
-
-llm = HuggingFacePipeline(pipeline=pipe)
-
+from langchain.llms import HuggingFacePipeline
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 
-# OPTIONAL: falls du ein Token verwendest (empfohlen bei Rate Limits)
-# os.environ["HUGGINGFACEHUB_API_TOKEN"] = st.secrets["HUGGINGFACEHUB_API_TOKEN"]
-
-# 📂 Lade die Gerichtsurteile
+# Load German court decisions from JSON
 with open("urteile.json", "r", encoding="utf-8") as f:
     urteile = json.load(f)
 
-# 🧠 Prompt-Template
-template = """You are a helpful legal assistant. Based on these court decisions:
+# Prompt template
+template = """Du bist ein hilfreicher rechtlicher Assistent. Basierend auf den folgenden Gerichtsurteilen:
 
 {kontext}
 
-Answer this legal question:
+Beantworte bitte die Rechtsfrage:
 
 {frage}
 
-Only use the facts given in the court decisions above.
-"""
+Nutze nur Fakten aus den obigen Urteilen und antworte auf Deutsch."""
+prompt = PromptTemplate(input_variables=["kontext", "frage"], template=template)
 
-prompt = PromptTemplate(
-    input_variables=["kontext", "frage"],
-    template=template
+# Load a free model via Hugging Face
+pipe = pipeline(
+    "text2text-generation",
+    model="google/flan-t5-large",
+    max_length=512,
+    temperature=0.0
 )
+llm = HuggingFacePipeline(pipeline=pipe)
 
-# 🔍 Wähle ein kostenloses Modell von Hugging Face
-llm = HuggingFaceHub(
-    repo_id="google/flan-t5-large",  # alternativ: flan-t5-base
-    model_kwargs={"temperature": 0.0, "max_length": 512}
-)
-
-# 🔗 Chain zusammenbauen
+# Build chain
 chain = LLMChain(llm=llm, prompt=prompt)
 
-# 🌐 Streamlit UI
-st.set_page_config(page_title="LegalBot (HF)", page_icon="⚖️")
-st.title("⚖️ LegalBot")
+# Streamlit UI
+st.set_page_config(page_title="LegalBot ‑ Free", page_icon="⚖️")
+st.title("⚖️ LegalBot – kostenlose Version 🇩🇪")
 
-frage = st.text_area("📝 Describe your legal case")
+frage = st.text_area("📝 Beschreibe dein rechtliches Anliegen auf Deutsch:")
 
-if st.button("🔍 Get Prediction"):
-    with st.spinner("Analyzing legal cases..."):
-        # 🔎 Einfache Schlüsselwortsuche
-        matching = [
-            u for u in urteile if any(word.lower() in u["inhalt"].lower() for word in frage.split())
-        ]
-        kontext = "\n\n".join([
-            f"- {u['gericht']} ({u['datum']}): {u['inhalt']}" for u in matching[:3]
-        ])
+if st.button("🔍 Urteil finden & analysieren"):
+    if not frage.strip():
+        st.warning("Bitte gib deine Frage ein.")
+    else:
+        # Simple keyword-based matching
+        keywords = frage.lower().split()
+        matches = [u for u in urteile if any(kw in u["inhalt"].lower() for kw in keywords)]
+        kontext = "\n\n".join(f"- {u['gericht']} ({u['datum']}): {u['inhalt']}" for u in matches[:3])
 
         if not kontext:
-            st.warning("⚠️ No relevant court decisions found.")
+            st.warning("⚠️ Keine passenden Gerichtsurteile gefunden.")
         else:
-            antwort = chain.run({"kontext": kontext, "frage": frage})
-            st.success("📜 Prediction & Reasoning:")
+            with st.spinner("Analysiere Urteile..."):
+                antwort = chain.invoke({"kontext": kontext, "frage": frage})
+            st.markdown("### 📜 Gefundene Urteile")
+            st.write(kontext)
+            st.markdown("### 🧠 Einschätzung")
             st.write(antwort)
