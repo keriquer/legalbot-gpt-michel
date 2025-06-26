@@ -27,7 +27,7 @@ def load_model():
     pipe = pipeline(
         "text2text-generation",
         model=model_name,
-        device=-1,  # force CPU
+        device=-1,  # force CPU (works on Streamlit Cloud/local)
         max_length=256,
     )
     return pipe
@@ -62,7 +62,7 @@ if st.button("🔍 Prognose abrufen"):
 
         # If everything failed (no API, no local), fall back to a general legal answer
         if not matching and not local_urteile:
-            kontext = "Es liegen keine konkreten Urteile vor. Bitte beachte das deutsche Recht und übliche gerichtliche Praxis."
+            kontext = "Es liegen keine konkreten Urteile vor. Bitte beantworte die Frage nach deutschem Recht."
 
         # 3. Build prompt and run AI
         prompt = f"Du bist ein hilfreicher Rechtsassistent. Basierend auf diesen Gerichtsurteilen:\n\n{kontext}\n\nBeantworte folgende Frage:\n{frage}"
@@ -73,4 +73,4 @@ if st.button("🔍 Prognose abrufen"):
             st.success("📜 Prognose & Begründung:")
             st.write(antwort)
         else:
-            st.warning("Das Modell hat keine Antwort generiert.")
+            st.warning("Das Modell hat keine Antwort gene
