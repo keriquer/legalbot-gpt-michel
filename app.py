@@ -1,11 +1,11 @@
 import streamlit as st
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain.chains import RetrievalQA
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.document_loaders import JSONLoader
 from langchain.text_splitter import CharacterTextSplitter
 import os
+
 
 # 🔐 Insert your API keys here
 os.environ["OPENAI_API_KEY"] = "your-openai-key"
