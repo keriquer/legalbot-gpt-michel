@@ -3,16 +3,7 @@ import requests
 from transformers import pipeline
 
 st.set_page_config(page_title="LegalBot mit deutschem Recht", page_icon="⚖️")
-
 st.title("⚖️ LegalBot mit deutschem Recht & Gerichtsurteilen")
-
-# --- Fetch recent court cases from OpenLegalData.io ---
-API_URL = "https://de.openlegaldata.io/api/cases/?limit=10"
-response = requests.get(API_URL)
-if response.status_code == 200:
-    cases = response.json().get('results', [])
-else:
-    cases = []
 
 frage = st.text_area("📝 Beschreibe deinen Fall auf Deutsch (z.B. 'fristlose Kündigung ohne Abmahnung')")
 
@@ -22,50 +13,45 @@ def load_model():
     return pipeline(
         "text2text-generation",
         model=model_name,
-        device=-1,  # CPU
+        device=-1,
         max_length=256,
     )
 
 pipe = load_model()
 
-def truncate_text(text, max_tokens):
-    words = text.split()
-    return " ".join(words[:max_tokens])
-
-if st.button("🔍 Prognose abrufen"):
+if st.button("🔍 Prognose abrufen") and frage.strip():
     with st.spinner("Analysiere Gesetzestexte & Gerichtsurteile..."):
-        # --- Find relevant court cases by keyword
+        # Try to find a good search term
+        words = frage.lower().split()
+        # Try to pick a likely legal keyword (prefer 'kündigung', etc. else just first word)
+        for keyword in ["kündigung", "abmahnung", "arbeitsrecht", "sozialauswahl", "behinderung"]:
+            if keyword in words:
+                search_term = keyword
+                break
+        else:
+            search_term = words[0] if words else "recht"
+        # Fetch cases
+        API_URL = f"https://de.openlegaldata.io/api/cases/?q={search_term}"
+        response = requests.get(API_URL)
+        if response.status_code == 200:
+            cases = response.json().get('results', [])
+        else:
+            cases = []
+        # Now match more specifically
         matching = [
             c for c in cases
-            if 'text' in c and any(word.lower() in c['text'].lower() for word in frage.split())
+            if 'text' in c and any(w in c['text'].lower() for w in words)
         ]
         if not matching:
             st.warning("Keine relevanten Entscheidungen gefunden.")
         else:
-            # Use only up to 3 relevant decisions for context
             kontext = "\n\n".join(
-                [f"- {c.get('court','?')} ({c.get('date_decided','?')}): {c['text'][:200]}..." for c in matching[:3]]
+                [f"- {c.get('court', 'Unbekannt')} ({c.get('date_decided', 'kein Datum')}): {c['text'][:200]}..." for c in matching[:3]]
             )
-            kontext_trunc = truncate_text(kontext, max_tokens=400)
-            frage_trunc = truncate_text(frage, max_tokens=40)
-            prompt = (
-                f"Du bist ein hilfreicher Rechtsassistent. "
-                f"Basierend auf diesen Gerichtsurteilen:\n\n{kontext_trunc}\n\n"
-                f"Beantworte folgende Frage:\n{frage_trunc}"
-            )
-            st.write("🛠️ DEBUG Prompt sent to model:", prompt)
-            try:
-                result = pipe(prompt)
-            except Exception as e:
-                st.error(f"Fehler beim Modellaufruf: {e}")
-                result = None
-
+            prompt = f"Du bist ein hilfreicher Rechtsassistent. Basierend auf diesen Gerichtsurteilen:\n\n{kontext}\n\nBeantworte folgende Frage:\n{frage}"
+            result = pipe(prompt)
             st.write("🛠️ Raw Model Output:", result)
-            if result and isinstance(result, list) and ('generated_text' in result[0] or 'text' in result[0]):
+            if result and isinstance(result, list):
                 antwort = result[0].get('generated_text') or result[0].get('text')
                 st.success("📜 Prognose & Begründung:")
                 st.write(antwort)
-            else:
-                st.warning("Das Modell konnte leider keine Antwort generieren.")
-
-st.caption("🔎 Dieses Tool nutzt Open Legal Data & das FLAN-T5 Modell. Keine echte Rechtsberatung.")
