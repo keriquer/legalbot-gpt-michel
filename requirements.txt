@@ -1,5 +1,5 @@
 streamlit
-langchain>=0.1.14
-langchain-community
+langchain
 transformers
 torch
+sentencepiece
