@@ -1,48 +1,47 @@
 import streamlit as st
 import os
 import json
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain.chains import RetrievalQA
-from langchain_community.vectorstores import FAISS
-from langchain.schema import Document
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_openai import ChatOpenAI
+from langchain.chains import LLMChain
+from langchain.prompts import PromptTemplate
 
-# 🔐 Load API keys securely from Streamlit Cloud secrets
+# 🔐 Secure key from Streamlit Secrets
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
-os.environ["LANGCHAIN_API_KEY"] = st.secrets["LANGCHAIN_API_KEY"]
-os.environ["LANGCHAIN_PROJECT"] = st.secrets["LANGCHAIN_PROJECT"]
 
-# 📄 Load JSON data
+# 🧠 Load court decisions
 with open("urteile.json", "r", encoding="utf-8") as f:
-    data = json.load(f)
+    urteile = json.load(f)
 
-# 📌 Cache FAISS vectorstore to avoid repeated embedding (and rate limits)
-DB_PATH = "faiss_index"
-embedding_model = OpenAIEmbeddings()
+# 📄 Prepare prompt template
+template = """You are a legal assistant. Based on the following court decisions:
 
-if os.path.exists(DB_PATH):
-    vectorstore = FAISS.load_local(DB_PATH, embedding_model, allow_dangerous_deserialization=True)
-else:
-    docs = [Document(page_content=item["inhalt"], metadata=item) for item in data]
-    splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    chunks = splitter.split_documents(docs)
-    vectorstore = FAISS.from_documents(chunks, embedding_model)
-    vectorstore.save_local(DB_PATH)
+{kontext}
 
-# 🧠 QA Chain
-retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-llm = ChatOpenAI(model="gpt-4", temperature=0)
-qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
+Now answer this legal question:
 
-# 🌐 Streamlit UI
-st.set_page_config(page_title="LegalBot", page_icon="⚖️")
-st.title("⚖️ LegalBot – GPT-powered Judgment Predictor")
-st.write("Enter a legal case description (e.g. employment dismissal, rent termination):")
+{frage}
 
-frage = st.text_area("📝 Case Description")
+Only refer to what is stated in the provided decisions.
+"""
+
+prompt = PromptTemplate(input_variables=["kontext", "frage"], template=template)
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+chain = LLMChain(llm=llm, prompt=prompt)
+
+# 🌐 UI
+st.set_page_config(page_title="LegalBot Lite", page_icon="⚖️")
+st.title("⚖️ LegalBot – Lite Version (No Embedding)")
+frage = st.text_area("📝 Describe your legal issue")
 
 if st.button("🔍 Get Prediction"):
-    with st.spinner("Analyzing similar court cases..."):
-        antwort = qa_chain.run(frage)
-        st.success("📜 Prediction & Legal Reasoning")
-        st.write(antwort)
+    with st.spinner("Checking relevant decisions..."):
+        # Simple matching: include all cases that mention key words
+        matching = [u for u in urteile if any(word.lower() in u["inhalt"].lower() for word in frage.split())]
+        kontext = "\n\n".join([f"- {u['gericht']} ({u['datum']}): {u['inhalt']}" for u in matching[:3]])
+
+        if not kontext:
+            st.warning("No relevant decisions found.")
+        else:
+            antwort = chain.run(kontext=kontext, frage=frage)
+            st.success("📜 Prediction & Legal Explanation:")
+            st.write(antwort)
