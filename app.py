@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-from transformers import pipeline
+from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
 
 # --- Fetch recent court cases from OpenLegalData.io ---
 API_URL = "https://de.openlegaldata.io/api/cases/?limit=5"
@@ -10,16 +10,25 @@ if response.status_code == 200:
 else:
     cases = []
 
-# --- Use a small, CPU-friendly model for maximum compatibility ---
-pipe = pipeline(
-    "text2text-generation",
-    model="google/flan-t5-small",   # <- lightweight and cloud-compatible!
-    max_length=256,
-    device=-1                       # <- force CPU, works on Streamlit Cloud
-)
-
 st.title("⚖️ LegalBot mit Open Legal Data (deutsch)")
 frage = st.text_area("📝 Beschreibe deinen Fall auf Deutsch (z.B. 'Kündigung')")
+
+# --- Load model and tokenizer explicitly and move model to CPU ---
+@st.cache_resource(show_spinner=True)
+def load_model():
+    model_name = "google/flan-t5-small"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    model.to('cpu')  # Explicitly assign model to CPU
+    return pipeline(
+        "text2text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        device=-1,  # Use CPU device
+        max_length=256,
+    )
+
+pipe = load_model()
 
 if st.button("🔍 Prognose abrufen"):
     with st.spinner("Analysiere echte Gerichtsurteile..."):
@@ -40,3 +49,4 @@ if st.button("🔍 Prognose abrufen"):
             if result and isinstance(result, list):
                 antwort = result[0].get('generated_text') or result[0].get('text')
                 st.success("📜 Prognose & Begründung:")
+                st.write(antwort)
