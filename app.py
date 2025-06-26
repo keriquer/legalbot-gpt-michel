@@ -13,26 +13,25 @@ else:
 st.title("⚖️ LegalBot mit Open Legal Data (deutsch)")
 frage = st.text_area("📝 Beschreibe deinen Fall auf Deutsch (z.B. 'Kündigung')")
 
-# --- Load model and tokenizer explicitly and move model to CPU ---
 @st.cache_resource(show_spinner=True)
 def load_model():
     model_name = "google/flan-t5-small"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-    model.to('cpu')  # Explicitly assign model to CPU
-    return pipeline(
+    model = model.to('cpu')  # Explicitly move model to CPU
+    pipe = pipeline(
         "text2text-generation",
         model=model,
         tokenizer=tokenizer,
-        device=-1,  # Use CPU device
+        device=-1,  # CPU
         max_length=256,
     )
+    return pipe
 
 pipe = load_model()
 
 if st.button("🔍 Prognose abrufen"):
     with st.spinner("Analysiere echte Gerichtsurteile..."):
-        # Simple keyword matching against fetched court case texts
         matching = [
             c for c in cases
             if 'text' in c and any(word.lower() in c['text'].lower() for word in frage.split())
@@ -45,7 +44,7 @@ if st.button("🔍 Prognose abrufen"):
             )
             prompt = f"Du bist ein hilfreicher Rechtsassistent. Basierend auf diesen Gerichtsurteilen:\n\n{kontext}\n\nBeantworte folgende Frage:\n{frage}"
             result = pipe(prompt)
-            st.write("🛠️ Raw Model Output:", result)  # Debug: See what the model returns
+            st.write("🛠️ Raw Model Output:", result)
             if result and isinstance(result, list):
                 antwort = result[0].get('generated_text') or result[0].get('text')
                 st.success("📜 Prognose & Begründung:")
