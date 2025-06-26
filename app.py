@@ -13,7 +13,7 @@ os.environ["LANGCHAIN_API_KEY"] = "your-langsmith-key"
 os.environ["LANGCHAIN_PROJECT"] = "LegalBot-Web"
 
 # 📁 Load your example court cases
-loader = JSONLoader("urteile.json", text_content_key="inhalt")
+loader = JSONLoader(file_path="urteile.json", jq_schema=".[]", text_content_key="inhalt")
 docs = loader.load()
 chunks = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_documents(docs)
 db = FAISS.from_documents(chunks, OpenAIEmbeddings())
