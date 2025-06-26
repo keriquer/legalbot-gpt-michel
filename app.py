@@ -2,7 +2,18 @@ import streamlit as st
 import json
 import os
 
-from langchain_community.llms import HuggingFaceHub
+from transformers import pipeline
+from langchain_community.llms import HuggingFacePipeline
+
+pipe = pipeline(
+    "text2text-generation",
+    model="google/flan-t5-large",
+    max_length=512,
+    temperature=0.0
+)
+
+llm = HuggingFacePipeline(pipeline=pipe)
+
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 
