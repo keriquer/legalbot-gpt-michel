@@ -8,5 +8,15 @@
     "gericht": "ArbG Berlin",
     "datum": "2020-05-10",
     "inhalt": "Im Fall einer verhaltensbedingten Kündigung ist regelmäßig eine Abmahnung erforderlich, es sei denn, das Verhalten ist so gravierend, dass eine Fortsetzung des Arbeitsverhältnisses unzumutbar ist."
+  },
+  {
+    "gericht": "LAG Köln",
+    "datum": "2018-06-15",
+    "inhalt": "Bei einer betriebsbedingten Kündigung ist eine ordnungsgemäße Sozialauswahl nach § 1 Abs. 3 KSchG zwingend erforderlich. Das Nichtbeachten kann zur Unwirksamkeit der Kündigung führen."
+  },
+  {
+    "gericht": "BAG",
+    "datum": "2016-11-17",
+    "inhalt": "Bei der Kündigung eines schwerbehinderten Arbeitnehmers ist die vorherige Zustimmung des Integrationsamtes erforderlich. Ohne diese Zustimmung ist die Kündigung unwirksam."
   }
 ]
