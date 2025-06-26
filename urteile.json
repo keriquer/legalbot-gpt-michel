@@ -1,15 +1,13 @@
+
 [
-    {
-      "gericht": "AG Berlin",
-      "datum": "2020-06-10",
-      "inhalt": "The landlord terminated the lease due to unpaid rent. The court ruled it invalid due to lack of proper notice.",
-      "rechtsgebiet": "Tenancy Law"
-    },
-    {
-      "gericht": "LAG Munich",
-      "datum": "2021-09-12",
-      "inhalt": "An employee was dismissed for operational reasons. The court ruled the termination invalid due to missing social selection.",
-      "rechtsgebiet": "Labor Law"
-    }
-  ]
-  
+  {
+    "gericht": "BAG",
+    "datum": "2012-02-23",
+    "inhalt": "Eine fristlose Kündigung ohne vorherige Abmahnung ist in der Regel nur dann wirksam, wenn ein besonders schwerer Pflichtverstoß des Arbeitnehmers vorliegt."
+  },
+  {
+    "gericht": "ArbG Berlin",
+    "datum": "2020-05-10",
+    "inhalt": "Im Fall einer verhaltensbedingten Kündigung ist regelmäßig eine Abmahnung erforderlich, es sei denn, das Verhalten ist so gravierend, dass eine Fortsetzung des Arbeitsverhältnisses unzumutbar ist."
+  }
+]
