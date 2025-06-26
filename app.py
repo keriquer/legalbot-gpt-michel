@@ -3,7 +3,6 @@ from oldp_client import Configuration, ApiClient
 from oldp_client.api.cases_api import CasesApi
 import json
 from transformers import pipeline
-from langchain.llms import HuggingFacePipeline
 
 # --- Setup Open Legal Data API client ---
 config = Configuration()
