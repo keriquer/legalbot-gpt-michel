@@ -7,7 +7,7 @@ from langchain_community.llms import HuggingFacePipeline
 
 pipe = pipeline(
     "text2text-generation",
-    model="google/flan-t5-large",
+    model="declare-lab/flan-alpaca-base",
     max_length=512,
     temperature=0.0
 )
