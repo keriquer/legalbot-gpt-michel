@@ -2,4 +2,3 @@ streamlit
 langchain
 transformers
 torch
-https://github.com/google/sentencepiece/releases/download/v0.1.99/sentencepiece-0.1.99-cp310-cp310-manylinux_2_17_x86_64.whl
