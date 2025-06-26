@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-from transformers import pipeline, AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import pipeline
 
 # --- Fetch recent court cases from OpenLegalData.io ---
 API_URL = "https://de.openlegaldata.io/api/cases/?limit=5"
@@ -16,14 +16,10 @@ frage = st.text_area("📝 Beschreibe deinen Fall auf Deutsch (z.B. 'Kündigung'
 @st.cache_resource(show_spinner=True)
 def load_model():
     model_name = "google/flan-t5-small"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-    model = model.to('cpu')  # Explicitly move model to CPU
     pipe = pipeline(
         "text2text-generation",
-        model=model,
-        tokenizer=tokenizer,
-        device=-1,  # CPU
+        model=model_name,
+        device=-1,  # force CPU
         max_length=256,
     )
     return pipe
